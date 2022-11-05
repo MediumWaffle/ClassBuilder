@@ -13,6 +13,8 @@ string askClassName();
 vector<string> askMemberVariables(vector<memberVar> &classVariables);
 void writeFile(ofstream &classFile, string className, string fileName, string guardName,vector<memberVar> &classVariables, vector<string> includeList);
 void checkInclude(vector<string> &includeList, string mData);
+void outputPrivate(ofstream &classFile, vector<memberVar> &classVariables);
+void outputPublic(ofstream &classFile, vector<memberVar> classVariables);
 
 
 int main(){
@@ -95,19 +97,15 @@ vector<string> askMemberVariables(vector<memberVar> &classVariables){
 }
 
 void writeFile(ofstream &classFile, string className, string fileName, string guardName, vector<memberVar> &classVariables, vector<string> includeList){
-    for(int j=0; j<(int)includeList.size(); ++j){
-        for(int k=0; k<(int)includeList[0].length(); ++k){
-            cout << includeList[j][k] << " ";
-        }
-        cout << "\n";
-    }
     //write to the class file
     //top guard
     classFile << "#ifndef " << guardName << "\n"
               << "#define " << guardName << "\n";
     //class initilization'
+    if(includeList.size() > 0){
+        classFile << "\n";
+    }
     for(int i=0; i<(int)includeList.size(); ++i){
-        cout << "\n";
         if(includeList[i] == "string"){
             classFile << "#include <string>\n";
         } else if (includeList[i].size()>=6 &&
@@ -123,14 +121,10 @@ void writeFile(ofstream &classFile, string className, string fileName, string gu
         }
     }
     classFile << "\nclass " << className << "\n"
-              << "{\n"
-              << "    private:\n";
-              for(int i=0; i<(int)classVariables.size(); ++i){
-                classFile << "        " << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
-              }
-    classFile << "    public:\n"
-              << "        //get and set functions here\n"
-              << "};\n\n"
+              << "{\n";
+    outputPublic(classFile, classVariables);
+    outputPrivate(classFile, classVariables);
+    classFile << "};\n\n"
     //bottom guard
               << "#endif";
 }
@@ -152,6 +146,68 @@ void checkInclude(vector<string> &includeList, string mData){
     }
 }
 
+void outputPrivate(ofstream &classFile, vector<memberVar> &classVariables){
+    classFile << "    private:\n";
+    for(int i=0; i<(int)classVariables.size(); ++i){
+        if(classVariables[i].dataType == "string" || classVariables[i].dataType == "fstream" || classVariables[i].dataType == "ifstream" || classVariables[i].dataType == "ofstream"){
+            classFile << "        std::" << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
+        } else if (classVariables[i].dataType.size()>=6 &&
+                    classVariables[i].dataType[0] == 'v' && 
+                    classVariables[i].dataType[1] == 'e' && 
+                    classVariables[i].dataType[2] == 'c' && 
+                    classVariables[i].dataType[3] == 't' && 
+                    classVariables[i].dataType[4] == 'o' && 
+                    classVariables[i].dataType[5] == 'r'){
+            classFile << "        std::" << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
+        } else {
+            classFile << "        " << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
+        }
+    }
+}
+
+void outputPublic(ofstream &classFile, vector<memberVar> classVariables){
+    classFile << "    public:\n";
+    //get functions
+    for(int i=0; i<(int)classVariables.size(); ++i){
+        string temp = classVariables[i].memberName;
+        temp[0] = toupper(temp[0]);
+        if(classVariables[i].dataType == "string"){
+            classFile << "        std::" << classVariables[i].dataType << " get"<< temp << "(){return " << classVariables[i].memberName << ";}\n";
+        } else if (classVariables[i].dataType == "fstream" || classVariables[i].dataType == "ifstream" || classVariables[i].dataType == "ofstream"){
+            classFile << "        std::" << classVariables[i].dataType << "* get"<< temp << "(){return &" << classVariables[i].memberName << ";}\n";
+        }else if (classVariables[i].dataType.size()>=6 &&
+                    classVariables[i].dataType[0] == 'v' && 
+                    classVariables[i].dataType[1] == 'e' && 
+                    classVariables[i].dataType[2] == 'c' && 
+                    classVariables[i].dataType[3] == 't' && 
+                    classVariables[i].dataType[4] == 'o' && 
+                    classVariables[i].dataType[5] == 'r'){
+            classFile << "        std::" << classVariables[i].dataType << " get"<< temp << "(){return " << classVariables[i].memberName << ";}\n";
+        } else {
+            classFile << "        " << classVariables[i].dataType << " get"<< temp << "(){return " << classVariables[i].memberName << ";}\n";
+        }
+    }
+    //set functions
+    for(int k=0; k<(int)classVariables.size(); ++k){
+        string temp = classVariables[k].memberName;
+        temp[0] = toupper(temp[0]);
+        if(classVariables[k].dataType == "string"){
+            classFile << "        void set" << temp << "(std::" << classVariables[k].dataType << " " << classVariables[k].memberName << "){this->" << classVariables[k].memberName << "=" << classVariables[k].memberName << ";}\n";
+        } else if (classVariables[k].dataType == "fstream" || classVariables[k].dataType == "ifstream" || classVariables[k].dataType == "ofstream"){
+            //cannot set a file, if you have a member name called fileName, then it will set that instead
+        }else if (classVariables[k].dataType.size()>=6 &&
+                    classVariables[k].dataType[0] == 'v' && 
+                    classVariables[k].dataType[1] == 'e' && 
+                    classVariables[k].dataType[2] == 'c' && 
+                    classVariables[k].dataType[3] == 't' && 
+                    classVariables[k].dataType[4] == 'o' && 
+                    classVariables[k].dataType[5] == 'r'){
+            classFile << "        void set" << temp << "(std::" << classVariables[k].dataType << " " << classVariables[k].memberName << "){this->" << classVariables[k].memberName << "=" << classVariables[k].memberName << ";}\n";
+        } else {
+            classFile << "        void set" << temp << "(" << classVariables[k].dataType << " " << classVariables[k].memberName << "){this->" << classVariables[k].memberName << "=" << classVariables[k].memberName << ";}\n";
+        }
+    }
+}
 //TODO LIST
 /*
 -make getter and setter functions
@@ -165,3 +221,4 @@ void checkInclude(vector<string> &includeList, string mData){
         -perameters, with variable as same data type
         -set member variable to perameter variable
 */
+//  Aaron int age string name vector<int> calendar fstream fFile ifstream iFile ofstream oFile char middleInitial .
