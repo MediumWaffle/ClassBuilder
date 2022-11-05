@@ -208,17 +208,3 @@ void outputPublic(ofstream &classFile, vector<memberVar> classVariables){
         }
     }
 }
-//TODO LIST
-/*
--make getter and setter functions
-    -set first index of variable name to toupper()
-    -put get/set infront of it
-    -get
-        -same data type as member variable
-        -return member variable name
-    -set
-        -void func
-        -perameters, with variable as same data type
-        -set member variable to perameter variable
-*/
-//  Aaron int age string name vector<int> calendar fstream fFile ifstream iFile ofstream oFile char middleInitial .
