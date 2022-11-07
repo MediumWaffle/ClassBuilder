@@ -208,3 +208,10 @@ void outputPublic(ofstream &classFile, vector<memberVar> classVariables){
         }
     }
 }
+
+//TODO
+/*
+- Clean up text, make look nice
+- If an include is already included, do not repeat that include
+- Make setter's for fstream objects
+*/
