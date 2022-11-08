@@ -1,67 +1,14 @@
-#include <iostream>
-#include <string>
-#include <fstream>
-#include <vector>
-using namespace std;
-
-struct memberVar{
-    string dataType;
-    string memberName;
-};
-
-string askClassName();
-vector<string> askMemberVariables(vector<memberVar> &classVariables);
-void writeFile(ofstream &classFile, string className, string fileName, string guardName,vector<memberVar> &classVariables, vector<string> includeList);
-void checkInclude(vector<string> &includeList, string mData);
-void outputPrivate(ofstream &classFile, vector<memberVar> &classVariables);
-void outputPublic(ofstream &classFile, vector<memberVar> classVariables);
-
-
-int main(){
-
-    //initilize variables
-    string className, fileName, guardName;
-    ofstream classFile;
-    vector<memberVar> classVariables;
-    vector<string> includeList;
-
-    className = askClassName();
-
-    //set file name
-    fileName = className;
-    fileName += ".h";
-
-    //check if file was created and opened
-    classFile.open(fileName);
-    if(!classFile){
-        cout << "Error opening file\n";
-        exit(1);
-    }
-
-    includeList = askMemberVariables(classVariables);
-
-    //make name for guard code, uppercase
-    guardName = className;
-    for(int i=0; i<(int)guardName.length(); ++i){
-        guardName[i] = toupper(guardName[i]); 
-    }
-    guardName += "_H";
-
-    writeFile(classFile, className, fileName, guardName, classVariables, includeList);
-
-    classFile.close();
-    return 0;
-}
-
-
+#include "class.h"
 
 string askClassName(){
     //ask for class name
     string className;
-    cout << "Welcome to Class Creator\n\n"
-         << "To get started, please enter the name of your class\n"
-         << "Make sure this name has no spaces\n";
+    cout << "+-----------------------------+\n";
+    cout << "+- Please enter a Class Name -+\n";
+    cout << "+-----------------------------+\n";
+    cout << " - ";
     cin >> className;
+    cout << "\n";
     return className;
 }
 
@@ -71,32 +18,48 @@ vector<string> askMemberVariables(vector<memberVar> &classVariables){
     vector<string> includeList;
     string mVar;
     string mData;
-    cout << "\nDo you want your class to have any member variables?\n"
-         << "Remember that you may not use spaces to define variables or data types.\n"
-         << "Enter the name of your data type first, or\n"
-         << "You may enter a '.' (period) if you have no variables\n";
+    cout << "+-------------------------------------------------+\n";
+    cout << "+- Enter the data type of your member variable   -+\n";
+    cout << "+- Or enter '.' if you have no member variables  -+\n";
+    cout << "+-------------------------------------------------+\n";
+    cout << " - ";
     cin >> mData;
+    cout << "\n";
     if(mData != "."){
         checkInclude(includeList, mData);
-        cout << "Now enter the name of your varibale\n";
+        cout << "+---------------------------------------+\n";
+        cout << "+- Now enter the name of your varibale -+\n";
+        cout << "+---------------------------------------+\n";
+        cout << " - ";
         cin >> mVar;
+        cout << "\n";
     }
     while(mData != "."){
         newMemberVariable.dataType = mData;
         newMemberVariable.memberName = mVar;
         classVariables.push_back(newMemberVariable);
-        cout << "\nPlease enter another data type or a '.' (period) to finish\n";
+        cout << "+----------------------------------+\n";
+        cout << "+- Please enter another data type -+\n";
+        cout << "+- Or enter '.' to exit           -+\n";
+        cout << "+----------------------------------+\n";
+        cout << " - ";
         cin >> mData;
+        cout << "\n";
         if(mData != "."){
             checkInclude(includeList, mData);
-            cout << "Please enter the variable name\n";
+            cout << "+----------------------------------+\n";
+            cout << "+- Please enter the variable name -+\n";
+            cout << "+----------------------------------+\n";
+            cout << " - ";
             cin >> mVar;
+            cout << "\n";
         }
     }
     return includeList;
 }
 
 void writeFile(ofstream &classFile, string className, string fileName, string guardName, vector<memberVar> &classVariables, vector<string> includeList){
+    bool stringBool = false, vectorBool = false, fstreamBool = false;
     //write to the class file
     //top guard
     classFile << "#ifndef " << guardName << "\n"
@@ -106,23 +69,27 @@ void writeFile(ofstream &classFile, string className, string fileName, string gu
         classFile << "\n";
     }
     for(int i=0; i<(int)includeList.size(); ++i){
-        if(includeList[i] == "string"){
+        if(includeList[i] == "string" && !stringBool){
             classFile << "#include <string>\n";
+            stringBool = true;
         } else if (includeList[i].size()>=6 &&
                    includeList[i][0] == 'v' && 
                    includeList[i][1] == 'e' && 
                    includeList[i][2] == 'c' && 
                    includeList[i][3] == 't' && 
                    includeList[i][4] == 'o' && 
-                   includeList[i][5] == 'r'){
+                   includeList[i][5] == 'r' &&
+                   !vectorBool){
             classFile << "#include <vector>\n";
-        } else if (includeList[i] == "fstream"){
+            vectorBool = true;
+        } else if (includeList[i] == "fstream" && !fstreamBool){
             classFile << "#include <fstream>\n";
+            fstreamBool = true;
         }
     }
     classFile << "\nclass " << className << "\n"
               << "{\n";
-    outputPublic(classFile, classVariables);
+    outputPublic(classFile, classVariables, className);
     outputPrivate(classFile, classVariables);
     classFile << "};\n\n"
     //bottom guard
@@ -158,15 +125,35 @@ void outputPrivate(ofstream &classFile, vector<memberVar> &classVariables){
                     classVariables[i].dataType[3] == 't' && 
                     classVariables[i].dataType[4] == 'o' && 
                     classVariables[i].dataType[5] == 'r'){
-            classFile << "        std::" << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
+            if(classVariables[i].dataType.length() >= 14 &&
+               classVariables[i].dataType[7] == 's' &&
+               classVariables[i].dataType[8] == 't' &&
+               classVariables[i].dataType[9] == 'r' &&
+               classVariables[i].dataType[10] == 'i' &&
+               classVariables[i].dataType[11] == 'n' &&
+               classVariables[i].dataType[12] == 'g'){
+                    classVariables[i].dataType[7] = 's';
+                    classVariables[i].dataType[8] = 't';
+                    classVariables[i].dataType[9] = 'd';
+                    classVariables[i].dataType[10] = ':';
+                    classVariables[i].dataType[11] = ':';
+                    classVariables[i].dataType[12] = 's';
+                    classVariables[i].dataType[13] = 't';
+                    classVariables[i].dataType += "ring>";
+                        classFile << "        std::" << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
+            } else {
+                classFile << "        std::" << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
+            }
         } else {
             classFile << "        " << classVariables[i].dataType << " " << classVariables[i].memberName << ";\n";
         }
     }
 }
 
-void outputPublic(ofstream &classFile, vector<memberVar> classVariables){
-    classFile << "    public:\n";
+void outputPublic(ofstream &classFile, vector<memberVar> classVariables, string className){
+    classFile << "    public:\n"
+              << "        " << className << "(){}\n"
+              << "        ~" << className << "(){}\n";
     //get functions
     for(int i=0; i<(int)classVariables.size(); ++i){
         string temp = classVariables[i].memberName;
@@ -182,7 +169,25 @@ void outputPublic(ofstream &classFile, vector<memberVar> classVariables){
                     classVariables[i].dataType[3] == 't' && 
                     classVariables[i].dataType[4] == 'o' && 
                     classVariables[i].dataType[5] == 'r'){
-            classFile << "        std::" << classVariables[i].dataType << " get"<< temp << "(){return " << classVariables[i].memberName << ";}\n";
+            if(classVariables[i].dataType.length() >= 14 &&
+               classVariables[i].dataType[7] == 's' &&
+               classVariables[i].dataType[8] == 't' &&
+               classVariables[i].dataType[9] == 'r' &&
+               classVariables[i].dataType[10] == 'i' &&
+               classVariables[i].dataType[11] == 'n' &&
+               classVariables[i].dataType[12] == 'g'){    
+                    classVariables[i].dataType[7] = 's';
+                    classVariables[i].dataType[8] = 't';
+                    classVariables[i].dataType[9] = 'd';
+                    classVariables[i].dataType[10] = ':';
+                    classVariables[i].dataType[11] = ':';
+                    classVariables[i].dataType[12] = 's';
+                    classVariables[i].dataType[13] = 't';
+                    classVariables[i].dataType += "ring>";
+                    classFile << "        std::" << classVariables[i].dataType << " get"<< temp << "(){return " << classVariables[i].memberName << ";}\n";
+            } else{
+                classFile << "        std::" << classVariables[i].dataType << " get"<< temp << "(){return " << classVariables[i].memberName << ";}\n";
+            }
         } else {
             classFile << "        " << classVariables[i].dataType << " get"<< temp << "(){return " << classVariables[i].memberName << ";}\n";
         }
@@ -202,16 +207,48 @@ void outputPublic(ofstream &classFile, vector<memberVar> classVariables){
                     classVariables[k].dataType[3] == 't' && 
                     classVariables[k].dataType[4] == 'o' && 
                     classVariables[k].dataType[5] == 'r'){
-            classFile << "        void set" << temp << "(std::" << classVariables[k].dataType << " " << classVariables[k].memberName << "){this->" << classVariables[k].memberName << "=" << classVariables[k].memberName << ";}\n";
+            if(classVariables[k].dataType.length() >= 14 &&
+               classVariables[k].dataType[7] == 's' &&
+               classVariables[k].dataType[8] == 't' &&
+               classVariables[k].dataType[9] == 'r' &&
+               classVariables[k].dataType[10] == 'i' &&
+               classVariables[k].dataType[11] == 'n' &&
+               classVariables[k].dataType[12] == 'g'){    
+                    classVariables[k].dataType[7] = 's';
+                    classVariables[k].dataType[8] = 't';
+                    classVariables[k].dataType[9] = 'd';
+                    classVariables[k].dataType[10] = ':';
+                    classVariables[k].dataType[11] = ':';
+                    classVariables[k].dataType[12] = 's';
+                    classVariables[k].dataType[13] = 't';
+                    classVariables[k].dataType += "ring>";
+                    classFile << "        void set" << temp << "(std::" << classVariables[k].dataType << " " << classVariables[k].memberName << "){this->" << classVariables[k].memberName << "=" << classVariables[k].memberName << ";}\n";
+            } else {
+                classFile << "        void set" << temp << "(std::" << classVariables[k].dataType << " " << classVariables[k].memberName << "){this->" << classVariables[k].memberName << "=" << classVariables[k].memberName << ";}\n";
+            }
         } else {
             classFile << "        void set" << temp << "(" << classVariables[k].dataType << " " << classVariables[k].memberName << "){this->" << classVariables[k].memberName << "=" << classVariables[k].memberName << ";}\n";
         }
     }
 }
 
-//TODO
-/*
-- Clean up text, make look nice
-- If an include is already included, do not repeat that include
-- Make setter's for fstream objects
-*/
+void information(){
+    cout << "+----------------------------+\n"
+         << "+- Welcome to Class Creator -+\n"
+         << "+----------------------------+\n"
+         << "+- [Class Name]             -+\n"
+         << "+- When entereing a class   -+\n"
+         << "+- name dont use any spaces -+\n"
+         << "+-                          -+\n"
+         << "+- [Member Variables]       -+\n"
+         << "+- You will be asked to     -+\n"
+         << "+- enter a data type then   -+\n"
+         << "+- a variable name. Don't   -+\n"
+         << "+- use any spaces here.     -+\n"
+         << "+-                          -+\n"
+         << "+- [When Finished]          -+\n"
+         << "+- Enter a '.' (period) to  -+\n"
+         << "+- end program and write    -+\n"
+         << "+- to the file.             -+\n"
+         << "+----------------------------+\n\n";
+}
